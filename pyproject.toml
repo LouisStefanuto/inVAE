@@ -9,11 +9,12 @@ authors = [
 ]
 requires-python = ">=3.9"
 dependencies = [
+    "scanpy>=1.10.3",
     "typer>=0.17.4",
 ]
 
 [project.scripts]
-invae = "invae.main:app"
+invae = "invae.cli:app"
 
 [project.optional-dependencies]
 dev = [
@@ -29,6 +30,10 @@ dev = [
 exclude = ["tests", "docs"]
 python_version = "3.13"
 strict = true
+
+[[tool.mypy.overrides]]
+module = ["scanpy.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 addopts = "--cov=src"
