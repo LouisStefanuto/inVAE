@@ -1,0 +1,47 @@
+name: Lint Test
+
+on: push
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 👾 Clone repo to runner
+        uses: actions/checkout@v4
+
+      - name: 🐍 Install uv and set the python version
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: 3.12
+
+      - name: 👀 Check python and uv versions
+        run: |
+          uv run python --version
+          uv --version
+
+      - name: 🚧 Install the project
+        run: uv sync --all-extras --dev
+
+      - name: 💎 Ruff Linter
+        run: |
+          uv run ruff check .
+
+      - name: 💎 Ruff Format
+        run: |
+          uv run ruff format . --check
+
+      - name: 📋 Mypy Check
+        run: |
+          uv run mypy --config-file=pyproject.toml .
+
+      - name: 🚀 Run unit tests
+        run: uv run pytest tests --cov=src --cov-report=xml
+
+      # (OPTIONAL)
+      # - name: 📤 Upload coverage to Codecov
+      #   uses: codecov/codecov-action@v5
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     files: ./coverage.xml
+      #     flags: unittests
+      #     name: codecov-umbrella

@@ -1,0 +1,17 @@
+services:
+  invae:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: invae:latest
+    container_name: invae
+    volumes:
+      - ./data:/app/data        # volume to mount your input files
+      - ./outputs:/app/outputs  # volume to mount your output files
+    working_dir: /app
+    ports:
+      - "8000:8000"
+    stdin_open: true   # equivalent to -it
+    tty: true          # keep interactive mode open
+    env_file:
+      - .env  # Docker reads this from the host, not container

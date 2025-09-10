@@ -1,0 +1,38 @@
+[project]
+name = "invae"
+version = "0.1.0"
+description = "Reimplementing the inVAE paper that aims at building representations of single-cell data."
+license = "MIT"
+readme = "README.md"
+authors = [
+    { name = "LouisStefanuto", email = "me@email.com" }
+]
+requires-python = ">=3.9"
+dependencies = [
+    "typer>=0.17.4",
+]
+
+[project.scripts]
+invae = "invae.main:app"
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.17.1",
+    "pre-commit>=4.3.0",
+    "pre-commit-hooks>=6.0.0",
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.12.12",
+]
+
+[tool.mypy]
+exclude = ["tests", "docs"]
+python_version = "3.13"
+strict = true
+
+[tool.pytest.ini_options]
+addopts = "--cov=src"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
