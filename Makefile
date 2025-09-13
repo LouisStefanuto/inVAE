@@ -64,6 +64,11 @@ docker-run:
 docs:
 	mkdocs serve -a localhost:8001
 
+## Clean MLflow trash
+.PHONY: clean-mlflow
+clean-mlflow:
+	rm -rf mlruns/.trash/*
+
 #################################################################################
 # Self Documenting Commands                                                     #
 #################################################################################

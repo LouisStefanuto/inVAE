@@ -1,10 +1,72 @@
 from pathlib import Path
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, List, Optional, Tuple
 
 import mlflow
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+
+from invae.mlflow_utils import get_next_run_name
+from invae.plots import plot_losses
+
+
+def train_one_epoch(
+    model: torch.nn.Module,
+    dataloader: DataLoader,
+    optimizer: torch.optim.Optimizer,
+    loss_fn: Callable,
+    device: str,
+) -> float:
+    """Train the model for one epoch and return average loss."""
+    model.train()
+    total_loss: float = 0.0
+    for batch in tqdm(dataloader, desc="[Train]"):
+        x = batch.X.to(device)
+
+        optimizer.zero_grad()
+        outputs = model(x)
+
+        if isinstance(outputs, tuple) and len(outputs) == 3:
+            recon, mu, logvar = outputs
+            loss = loss_fn(recon, x, mu, logvar)
+        else:
+            loss = loss_fn(outputs, x)
+
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item()
+
+    avg_loss: float = total_loss / len(dataloader.dataset)
+    return avg_loss
+
+
+def validate(
+    model: torch.nn.Module, dataloader: DataLoader, loss_fn: Callable, device: str
+) -> float:
+    """Validate the model and return average loss."""
+    model.eval()
+    total_loss: float = 0.0
+    with torch.no_grad():
+        for batch in tqdm(dataloader, desc="[Val]"):
+            x = batch.X.to(device)
+            outputs = model(x)
+
+            if isinstance(outputs, tuple) and len(outputs) == 3:
+                recon, mu, logvar = outputs
+                loss = loss_fn(recon, x, mu, logvar)
+            else:
+                loss = loss_fn(outputs, x)
+
+            total_loss += loss.item()
+
+    avg_loss: float = total_loss / len(dataloader.dataset)
+    return avg_loss
+
+
+def save_checkpoint(model: torch.nn.Module, path: Path) -> None:
+    """Save model state dict to the specified path."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(model.state_dict(), path)
 
 
 def train_model(
@@ -18,35 +80,29 @@ def train_model(
     ckpt_dir: str = "checkpoints",
     metrics: Optional[Dict[str, Callable]] = None,
     experiment_name: Optional[str] = None,
-) -> tuple[str, str]:
+) -> Tuple[str, str]:
     """
-    Generic training loop with MLflow logging.
-
-    Args:
-        model: PyTorch model
-        train_loader: training dataloader
-        val_loader: validation dataloader
-        optimizer: optimizer
-        loss_fn: loss function
-        num_epochs: number of epochs
-        device: 'cuda', 'cpu', or 'mps'
-        ckpt_dir: directory to save model checkpoint
-        metrics: dict of additional metrics {name: fn(y_pred, y_true)}
+    Training loop with MLflow logging, loss plotting, and checkpointing.
 
     Returns:
-        run_id (str): The MLflow run ID for this training run
+        run_id (str), checkpoint path (str)
     """
     model.to(device)
 
-    if experiment_name is not None:
+    if experiment_name:
         mlflow.set_experiment(experiment_name)
+        run_name = get_next_run_name(experiment_name)
+    else:
+        run_name = "run_1"  # default if no experiment provided
 
-    # MLflow logging
+    train_losses: List[float] = []
+    val_losses: List[float] = []
+
     with mlflow.start_run() as run:
-        run_id = run.info.run_id
-        run_name = f"run_{run_id[:8]}"  # shorter display name
+        run_id: str = run.info.run_id
         mlflow.set_tag("mlflow.runName", run_name)
 
+        # Log hyperparameters
         mlflow.log_param("num_epochs", num_epochs)
         mlflow.log_param("optimizer", optimizer.__class__.__name__)
         mlflow.log_param(
@@ -54,51 +110,17 @@ def train_model(
             loss_fn.__name__ if hasattr(loss_fn, "__name__") else str(loss_fn),
         )
 
+        # Training loop
         for epoch in range(num_epochs):
-            # ---------------- Train ----------------
-            model.train()
-            total_train_loss = 0.0
-            for batch in tqdm(
-                train_loader, desc=f"Epoch {epoch + 1}/{num_epochs} [Train]"
-            ):
-                x = batch.X.to(device)
+            avg_train_loss: float = train_one_epoch(
+                model, train_loader, optimizer, loss_fn, device
+            )
+            avg_val_loss: float = validate(model, val_loader, loss_fn, device)
 
-                optimizer.zero_grad()
-                outputs = model(x)
+            train_losses.append(avg_train_loss)
+            val_losses.append(avg_val_loss)
 
-                if isinstance(outputs, tuple) and len(outputs) == 3:
-                    recon, mu, logvar = outputs
-                    loss = loss_fn(recon, x, mu, logvar)
-                else:
-                    loss = loss_fn(outputs, x)
-
-                loss.backward()
-                optimizer.step()
-                total_train_loss += loss.item()
-
-            avg_train_loss = total_train_loss / len(train_loader.dataset)
-
-            # ---------------- Validation ----------------
-            model.eval()
-            total_val_loss = 0.0
-            with torch.no_grad():
-                for batch in tqdm(
-                    val_loader, desc=f"Epoch {epoch + 1}/{num_epochs} [Val]"
-                ):
-                    x = batch.X.to(device)
-                    outputs = model(x)
-
-                    if isinstance(outputs, tuple) and len(outputs) == 3:
-                        recon, mu, logvar = outputs
-                        loss = loss_fn(recon, x, mu, logvar)
-                    else:
-                        loss = loss_fn(outputs, x)
-
-                    total_val_loss += loss.item()
-
-            avg_val_loss = total_val_loss / len(val_loader.dataset)
-
-            # Log to MLflow
+            # Log metrics
             mlflow.log_metric("train_loss", avg_train_loss, step=epoch)
             mlflow.log_metric("val_loss", avg_val_loss, step=epoch)
 
@@ -108,15 +130,17 @@ def train_model(
                 f"Val Loss: {avg_val_loss:.4f}"
             )
 
-        # ---------------- Save checkpoint ----------------
-        ckpt_path = Path(ckpt_dir) / f"model_{run_id}.pt"
-        ckpt_path.parent.mkdir(parents=True, exist_ok=True)
-        torch.save(model.state_dict(), ckpt_path)
+        # Save checkpoint and plot
+        ckpt_path: Path = Path(ckpt_dir) / f"model_{run_id}.pt"
+        save_checkpoint(model, ckpt_path)
         mlflow.log_artifact(str(ckpt_path))
 
-        # Register model in MLflow with run-based name
-        model_name = f"{run_name}_{run_id[:8]}"
-        mlflow.pytorch.log_model(model, name="model", registered_model_name="model")
-        print(f"Model saved to {ckpt_path} and registered as {model_name}")
+        plot_path: Path = Path(ckpt_dir) / f"loss_plot_{run_id}.png"
+        plot_losses(train_losses, val_losses, plot_path)
+        mlflow.log_artifact(str(plot_path))
 
-    return run_id, ckpt_path
+        # Register model
+        mlflow.pytorch.log_model(model, name="model", registered_model_name="model")
+        print(f"Model saved to {ckpt_path} and loss plot saved to {plot_path}")
+
+    return run_id, str(ckpt_path)

@@ -10,7 +10,7 @@ class Config(BaseSettings):
 
     # Training
     batch_size: int = 32
-    num_epochs: int = 10
+    num_epochs: int = 100
     learning_rate: float = 1e-3
 
     # Model
