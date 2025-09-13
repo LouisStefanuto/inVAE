@@ -6,8 +6,11 @@ services:
     image: invae:latest
     container_name: invae
     volumes:
-      - ./data:/app/data        # volume to mount your input files
-      - ./outputs:/app/outputs  # volume to mount your output files
+      # - ./data:/app/data                 # volume to mount your input files
+      # - ./checkpoints:/app/checkpoints   # volume to mount your output checkpoints
+      # - ./mlruns:/app/mlruns             # volume to mount your MLflow data
+      - .:/app                             # useful to dev
+      - /app/.venv
     working_dir: /app
     ports:
       - "8000:8000"

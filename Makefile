@@ -54,6 +54,11 @@ docker:
 	docker compose build invae
 	docker compose run --rm invae /bin/bash
 
+## Run docker container (expects it to be built)
+.PHONY: docker-run
+docker-run:
+	docker compose run --rm invae /bin/bash
+
 ## Serve project doc locally
 .PHONY: docs
 docs:

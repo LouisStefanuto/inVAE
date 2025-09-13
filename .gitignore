@@ -169,3 +169,6 @@ uv.lock
 
 data/*
 *.h5
+mlruns/
+outputs/
+checkpoints/

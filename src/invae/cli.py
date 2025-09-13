@@ -27,7 +27,18 @@ def main(
         typer.Option("--version", callback=version_callback),
     ] = None,
 ) -> None:
-    from invae.main import main as entrypoint_main
+    pass
+
+
+@app.command()
+def run(
+    version: Annotated[
+        Optional[bool],
+        typer.Option("--version", callback=version_callback),
+    ] = None,
+) -> None:
+    """Train VAE model then predict on test set."""
+    from invae.scripts.main import main as entrypoint_main
 
     entrypoint_main()
 
