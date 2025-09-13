@@ -31,6 +31,7 @@ dev = [
     "pytest>=8.4.2",
     "pytest-cov>=7.0.0",
     "ruff>=0.12.12",
+    "types-tqdm>=4.67.0.20250809",
 ]
 
 [tool.mypy]
@@ -39,7 +40,7 @@ python_version = "3.13"
 strict = true
 
 [[tool.mypy.overrides]]
-module = ["scanpy.*"]
+module = ["scanpy.*", "anndata.*", "torchsummary.*", "sklearn.model_selection.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

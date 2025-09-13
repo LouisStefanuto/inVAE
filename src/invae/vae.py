@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 
@@ -59,7 +60,9 @@ def load_model(
     return model
 
 
-def extract_latent(model: VAE, dataloader, device: str = "cuda") -> np.ndarray:
+def extract_latent(
+    model: VAE, dataloader: DataLoader, device: str = "cuda"
+) -> np.ndarray:
     """Extract latent mean (mu) for all samples in the dataloader."""
     model.eval()
     zs: list[torch.Tensor] = []

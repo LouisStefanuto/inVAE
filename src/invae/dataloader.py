@@ -39,7 +39,7 @@ def split_adata(
 
 def build_dataloader(
     adata: AnnData,
-    encoders: Dict[str, Dict[str, Any]] = None,
+    encoders: Dict[str, Dict[str, Any]] | None = None,
     batch_size: int = 128,
     use_cuda: bool = True,
     shuffle: bool = True,
