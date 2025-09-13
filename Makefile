@@ -54,10 +54,20 @@ docker:
 	docker compose build invae
 	docker compose run --rm invae /bin/bash
 
+## Run docker container (expects it to be built)
+.PHONY: docker-run
+docker-run:
+	docker compose run --rm invae /bin/bash
+
 ## Serve project doc locally
 .PHONY: docs
 docs:
 	mkdocs serve -a localhost:8001
+
+## Clean MLflow trash
+.PHONY: clean-mlflow
+clean-mlflow:
+	rm -rf mlruns/.trash/*
 
 #################################################################################
 # Self Documenting Commands                                                     #

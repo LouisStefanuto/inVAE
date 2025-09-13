@@ -9,14 +9,22 @@ authors = [
 ]
 requires-python = ">=3.9"
 dependencies = [
+    "matplotlib>=3.9.4",
+    "mlflow>=3.1.4",
+    "pydantic>=2.11.9",
+    "pydantic-settings>=2.10.1",
+    "scanpy>=1.10.3",
+    "torch>=2.8.0",
+    "torchsummary>=1.5.1",
     "typer>=0.17.4",
 ]
 
 [project.scripts]
-invae = "invae.main:app"
+invae = "invae.cli:app"
 
 [project.optional-dependencies]
 dev = [
+    "ipykernel>=6.30.1",
     "mypy>=1.17.1",
     "pre-commit>=4.3.0",
     "pre-commit-hooks>=6.0.0",
@@ -29,6 +37,10 @@ dev = [
 exclude = ["tests", "docs"]
 python_version = "3.13"
 strict = true
+
+[[tool.mypy.overrides]]
+module = ["scanpy.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 addopts = "--cov=src"

@@ -28,7 +28,7 @@ repos:
     - id: end-of-file-fixer
       exclude: ^docs/
     - id: pretty-format-json
-      exclude: ^examples/
+      exclude: ^notebooks/
       args: ['--autofix', '--indent', '4']
     - id: trailing-whitespace
       exclude: ^docs/
