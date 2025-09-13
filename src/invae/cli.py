@@ -27,7 +27,9 @@ def main(
         typer.Option("--version", callback=version_callback),
     ] = None,
 ) -> None:
-    pass
+    from invae.main import main as entrypoint_main
+
+    entrypoint_main()
 
 
 if __name__ == "__main__":

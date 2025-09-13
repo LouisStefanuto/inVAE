@@ -9,7 +9,10 @@ authors = [
 ]
 requires-python = ">=3.9"
 dependencies = [
+    "pydantic>=2.11.9",
+    "pydantic-settings>=2.10.1",
     "scanpy>=1.10.3",
+    "torch>=2.8.0",
     "typer>=0.17.4",
 ]
 
@@ -18,6 +21,7 @@ invae = "invae.cli:app"
 
 [project.optional-dependencies]
 dev = [
+    "ipykernel>=6.30.1",
     "mypy>=1.17.1",
     "pre-commit>=4.3.0",
     "pre-commit-hooks>=6.0.0",
